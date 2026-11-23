@@ -32,7 +32,31 @@ Uses a smart plug with power metering (Shelly, Sonoff, Zigbee…):
 | Dishwasher | 10 | 3 | 15 (long drying pauses) |
 | Dryer | 50 | 10 | 3 |
 
-## Manual install
+## 📱 Home dashboard (no HACS)
+A ready-made, mobile-first dashboard that uses **only built-in cards**, so nothing breaks on the next update:
+- header badges (outside temperature, lights on, open windows/covers, alarm) and a one-line summary;
+- **alerts that appear only when needed**: water leak, unlocked doors, low batteries;
+- "turn off all lights" button, weather, lights with brightness sliders, thermostat, covers, alarm and locks;
+- Energy view (power gauge with 3.3 kW threshold, plugs, 24h history) and Media view.
+
+The summary sensors in `packages/home_dashboard.yaml` **find your devices automatically**. In `dashboards/home.yaml`, replace the example entity IDs marked `ADAPT` with yours.
+
+<p><img src="img/dashboard-mobile.png" width="260" alt="Mobile view"> <img src="img/dashboard-desktop.png" width="560" alt="Desktop view"></p>
+
+**Install:** copy `packages/home_dashboard.yaml` into your `packages` folder (`homeassistant: packages: !include_dir_named packages`), copy `dashboards/home.yaml` next to `configuration.yaml` and add:
+```yaml
+lovelace:
+  dashboards:
+    dashboard-home:
+      mode: yaml
+      filename: dashboards/home.yaml
+      title: Home
+      icon: mdi:home
+      show_in_sidebar: true
+```
+Restart, and **Home** appears in the sidebar. (Or paste `home.yaml` into a UI dashboard's raw configuration editor.)
+
+## Manual install (blueprints)
 Copy the file into `config/blueprints/automation/homelab_italia/`, then **Settings → Automations & scenes → Blueprints → reload**.
 
 ## Need something custom?

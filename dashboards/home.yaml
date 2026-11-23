@@ -1,0 +1,224 @@
+# Home Dashboard — Homelab Italia
+# Built-in Home Assistant cards only: no HACS components to install.
+# Replace the entity IDs (search for "ADAPT") with yours; the summary sensors
+# come from packages/dashboard_casa.yaml and work as-is.
+title: Home
+views:
+  - title: Home
+    path: home
+    icon: mdi:home
+    type: sections
+    max_columns: 3
+    badges:
+      - type: entity
+        entity: sensor.outside_temperature   # ADAPT: temperatura esterna
+        name: Outside
+        show_name: true
+        color: orange
+      - type: entity
+        entity: sensor.lights_on
+        name: Lights
+        show_name: true
+        color: amber
+        tap_action: {action: navigate, navigation_path: "#luci"}
+      - type: entity
+        entity: sensor.openings_open
+        name: Open
+        show_name: true
+        color: blue
+      - type: entity
+        entity: alarm_control_panel.security   # ADAPT: allarme (o elimina il badge)
+        name: Alarm
+        show_name: true
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Overview
+            heading_style: title
+            icon: mdi:home-heart
+          - type: markdown
+            text_only: true
+            content: >
+              ## {% set h = now().hour %}{{ 'Good morning' if 5 <= h < 12 else 'Good afternoon' if h < 18 else 'Good evening' }}
+
+              {% set l = states('sensor.lights_on') | int(0) %}{% set a = states('sensor.openings_open') | int(0) %}
+              {{ 'No lights on' if l == 0 else (l ~ (' light on' if l == 1 else ' lights on')) }} ·
+              {{ 'everything closed' if a == 0 else (a ~ (' opening open' if a == 1 else ' openings open')) }}
+          - type: markdown
+            visibility:
+              - condition: state
+                entity: binary_sensor.water_leak
+                state: "on"
+            content: "### <ha-icon icon=\"mdi:water-alert\"></ha-icon> Water leak detected!\nCheck your leak sensors now."
+          - type: markdown
+            visibility:
+              - condition: state
+                entity: sensor.unlocked_locks
+                state_not: "0"
+            content: "<ha-icon icon=\"mdi:lock-open-variant\"></ha-icon> **Unlocked doors:** {{ state_attr('sensor.unlocked_locks', 'names') }}"
+          - type: markdown
+            visibility:
+              - condition: state
+                entity: sensor.low_batteries
+                state_not: "0"
+            content: "<ha-icon icon=\"mdi:battery-alert\"></ha-icon> **{% set n = states('sensor.low_batteries') | int(0) %}{{ n }} {{ 'device' if n == 1 else 'devices' }} with battery below 20%**"
+          - type: tile
+            entity: script.hi_all_lights_off
+            name: Turn off all lights
+            icon: mdi:lightbulb-group-off
+            color: amber
+            tap_action: {action: perform-action, perform_action: script.hi_all_lights_off}
+            grid_options: {columns: 12}
+          - type: weather-forecast
+            entity: weather.forecast_home   # ADAPT: your weather entity
+            forecast_type: daily
+            show_forecast: true
+      - type: grid
+        cards:
+          - type: heading
+            heading: Lights
+            icon: mdi:lightbulb
+            badges:
+              - type: entity
+                entity: sensor.lights_on
+          # ADAPT: your lights (one tile per light; the slider sets brightness)
+          - type: tile
+            entity: light.living_room_rgbww_lights
+            name: Living room
+            features: [{type: light-brightness}]
+            features_position: bottom
+            grid_options: {columns: 12}
+          - type: tile
+            entity: light.kitchen_lights
+            name: Kitchen
+            features: [{type: light-brightness}]
+          - type: tile
+            entity: light.ceiling_lights
+            name: Office
+            features: [{type: light-brightness}]
+          - type: tile
+            entity: light.bed_light
+            name: Bedroom
+          - type: tile
+            entity: light.entrance_color_white_lights
+            name: Entrance
+      - type: grid
+        cards:
+          - type: heading
+            heading: Climate
+            icon: mdi:thermostat
+          - type: thermostat
+            entity: climate.heatpump   # ADAPT: your thermostat
+            name: Heating
+            features:
+              - type: climate-hvac-modes
+                hvac_modes: [heat, "off"]
+          - type: tile
+            entity: sensor.outside_humidity   # ADAPT: humidity
+            name: Outside humidity
+            color: blue
+      - type: grid
+        cards:
+          - type: heading
+            heading: Covers & windows
+            icon: mdi:window-shutter
+            badges:
+              - type: entity
+                entity: sensor.openings_open
+          # ADAPT: shutters/blinds/garage
+          - type: tile
+            entity: cover.living_room_window
+            name: Living room
+            features: [{type: cover-open-close}]
+          - type: tile
+            entity: cover.kitchen_window
+            name: Kitchen
+            features: [{type: cover-open-close}]
+          - type: tile
+            entity: cover.garage_door
+            name: Garage
+            features: [{type: cover-open-close}]
+      - type: grid
+        cards:
+          - type: heading
+            heading: Security
+            icon: mdi:shield-home
+          - type: tile
+            entity: alarm_control_panel.security   # ADAPT
+            name: Alarm
+            features:
+              - type: alarm-modes
+                modes: [armed_away, armed_home, disarmed]
+            grid_options: {columns: 12}
+          # ADAPT: locks
+          - type: tile
+            entity: lock.front_door
+            name: Front door
+            features: [{type: lock-commands}]
+          - type: tile
+            entity: lock.kitchen_door
+            name: Kitchen door
+            features: [{type: lock-commands}]
+
+  - title: Energy
+    path: energy
+    icon: mdi:lightning-bolt
+    type: sections
+    max_columns: 2
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Power now
+            icon: mdi:flash
+          - type: gauge
+            entity: sensor.power_consumption   # ADAPT: current power (W)
+            name: Power
+            unit: W
+            min: 0
+            max: 4500
+            needle: true
+            severity: {green: 0, yellow: 2500, red: 3300}
+            grid_options: {columns: 12}
+          - type: tile
+            entity: switch.ac   # ADAPT: smart plugs
+            name: AC plug
+          - type: tile
+            entity: switch.decorative_lights
+            name: Decorative lights
+      - type: grid
+        cards:
+          - type: heading
+            heading: Last 24 hours
+            icon: mdi:chart-line
+          - type: history-graph
+            hours_to_show: 24
+            entities:
+              - entity: sensor.power_consumption   # ADAPT
+                name: Power
+            grid_options: {columns: 12}
+
+  - title: Media
+    path: media
+    icon: mdi:play-circle
+    type: sections
+    max_columns: 2
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Now playing
+            icon: mdi:speaker
+          # ADAPT: your media players
+          - type: media-control
+            entity: media_player.living_room
+            grid_options: {columns: 12}
+          - type: tile
+            entity: media_player.kitchen
+            name: Kitchen
+            features: [{type: media-player-volume-slider}]
+          - type: tile
+            entity: media_player.bedroom
+            name: Bedroom
+            features: [{type: media-player-volume-slider}]

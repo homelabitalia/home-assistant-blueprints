@@ -1,0 +1,59 @@
+# Home Dashboard — Homelab Italia · summary sensors used by the dashboard.
+# They find lights, covers, locks and sensors automatically: no lists to maintain.
+template:
+  - sensor:
+      - name: Lights on
+        unique_id: hi_lights_on
+        icon: mdi:lightbulb-group
+        state: "{{ states.light | selectattr('state', 'eq', 'on') | list | count }}"
+        attributes:
+          names: "{{ states.light | selectattr('state', 'eq', 'on') | map(attribute='name') | join(', ') }}"
+      - name: Openings open
+        unique_id: hi_openings_open
+        icon: mdi:window-open-variant
+        state: >
+          {{ (states.cover | selectattr('state', 'in', ['open', 'opening']) | list | count)
+             + (states.binary_sensor | selectattr('attributes.device_class', 'defined')
+                | selectattr('attributes.device_class', 'in', ['window', 'door', 'garage_door', 'opening'])
+                | selectattr('state', 'eq', 'on') | list | count) }}
+        attributes:
+          names: >
+            {{ (states.cover | selectattr('state', 'in', ['open', 'opening']) | map(attribute='name') | list
+               + states.binary_sensor | selectattr('attributes.device_class', 'defined')
+               | selectattr('attributes.device_class', 'in', ['window', 'door', 'garage_door', 'opening'])
+               | selectattr('state', 'eq', 'on') | map(attribute='name') | list) | join(', ') }}
+      - name: Unlocked locks
+        unique_id: hi_unlocked_locks
+        icon: mdi:lock-open-alert
+        state: "{{ states.lock | selectattr('state', 'in', ['unlocked', 'open', 'opening', 'jammed']) | list | count }}"
+        attributes:
+          names: "{{ states.lock | selectattr('state', 'in', ['unlocked', 'open', 'opening', 'jammed']) | map(attribute='name') | join(', ') }}"
+      - name: Low batteries
+        unique_id: hi_low_batteries
+        icon: mdi:battery-alert
+        state: >
+          {{ states.sensor | selectattr('attributes.device_class', 'defined')
+             | selectattr('attributes.device_class', 'eq', 'battery')
+             | selectattr('state', 'is_number') | map(attribute='state') | map('float')
+             | select('lt', 20) | list | count }}
+      - name: Media players playing
+        unique_id: hi_media_playing
+        icon: mdi:play-circle
+        state: "{{ states.media_player | selectattr('state', 'eq', 'playing') | list | count }}"
+  - binary_sensor:
+      - name: Water leak
+        unique_id: hi_water_leak
+        device_class: moisture
+        state: >
+          {{ states.binary_sensor | selectattr('attributes.device_class', 'defined')
+             | selectattr('attributes.device_class', 'eq', 'moisture')
+             | selectattr('state', 'eq', 'on') | list | count > 0 }}
+
+script:
+  hi_all_lights_off:
+    alias: Turn off all lights
+    icon: mdi:lightbulb-group-off
+    sequence:
+      - action: light.turn_off
+        target:
+          entity_id: all
