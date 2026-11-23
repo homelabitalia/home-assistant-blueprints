@@ -1,0 +1,92 @@
+blueprint:
+  name: Window open → turn off heating/AC (and restore it)
+  description: >
+    If a window stays open, turns off the room's thermostat or air conditioner.
+    When all windows are closed again, restores it exactly as it was (mode and target temperature).
+    — Homelab Italia · https://ko-fi.com/homelabitalia
+  domain: automation
+  author: Homelab Italia
+  input:
+    finestre:
+      name: Room windows / doors
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: binary_sensor
+    clima:
+      name: Thermostat or air conditioner
+      selector:
+        entity:
+          filter:
+            - domain: climate
+    minuti_apertura:
+      name: Turn off after (minutes open)
+      description: "A quick airing doesn't need a shutdown; 2-3 minutes is a good value."
+      default: 2
+      selector:
+        number:
+          min: 0
+          max: 30
+          unit_of_measurement: min
+    secondi_chiusura:
+      name: Restore after (seconds closed)
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 600
+          unit_of_measurement: s
+    servizio_notifica:
+      name: Notify service (optional)
+      description: E.g. notify.mobile_app_your_phone. Leave empty for no notifications.
+      default: ""
+      selector:
+        text:
+
+mode: single
+max_exceeded: silent
+
+triggers:
+  - trigger: state
+    entity_id: !input finestre
+    to: "on"
+    for:
+      minutes: !input minuti_apertura
+
+variables:
+  finestre: !input finestre
+  clima: !input clima
+  servizio_notifica: !input servizio_notifica
+  scena: "finestra_{{ clima | replace('climate.', '') }}"
+
+conditions:
+  - condition: template
+    value_template: "{{ not is_state(clima, 'off') and states(clima) not in ['unavailable', 'unknown'] }}"
+
+actions:
+  - action: scene.create
+    data:
+      scene_id: "{{ scena }}"
+      snapshot_entities: "{{ [clima] }}"
+  - action: climate.turn_off
+    target:
+      entity_id: "{{ clima }}"
+  - if:
+      - condition: template
+        value_template: "{{ servizio_notifica != '' }}"
+    then:
+      - action: "{{ servizio_notifica }}"
+        data:
+          message: "🪟 {{ state_attr(trigger.entity_id, 'friendly_name') }} is open: turned off {{ state_attr(clima, 'friendly_name') }}."
+  # wait until ALL windows are closed
+  - wait_template: "{{ finestre | select('is_state', 'on') | list | count == 0 }}"
+    timeout: "12:00:00"
+    continue_on_timeout: false
+  - delay:
+      seconds: !input secondi_chiusura
+  - condition: template
+    value_template: "{{ finestre | select('is_state', 'on') | list | count == 0 }}"
+  - action: scene.turn_on
+    target:
+      entity_id: "scene.{{ scena }}"

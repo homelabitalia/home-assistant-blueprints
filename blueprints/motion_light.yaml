@@ -1,0 +1,127 @@
+blueprint:
+  name: Motion-activated light (day/night)
+  description: >
+    Turns the light on when motion is detected and off when the room is empty.
+    Only turns on when it's dark (optional illuminance sensor), uses a dim level at night
+    so you're not blinded, and leaves the light alone if you switched it on manually.
+    — Homelab Italia · https://ko-fi.com/homelabitalia
+  domain: automation
+  author: Homelab Italia
+  input:
+    movimento:
+      name: Motion sensors
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: binary_sensor
+    luci:
+      name: Lights
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: light
+    minuti_spegnimento:
+      name: Turn off after (minutes without motion)
+      default: 2
+      selector:
+        number:
+          min: 0.5
+          max: 60
+          step: 0.5
+          unit_of_measurement: min
+    luminosita_giorno:
+      name: Daytime brightness
+      default: 100
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+    luminosita_notte:
+      name: Night brightness
+      default: 15
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+    inizio_notte:
+      name: Night starts at
+      default: "23:00:00"
+      selector:
+        time:
+    fine_notte:
+      name: Night ends at
+      default: "06:30:00"
+      selector:
+        time:
+    sensore_lux:
+      name: Illuminance sensor (optional)
+      description: If set, the light only turns on when the room is darker than the threshold.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: illuminance
+    soglia_lux:
+      name: Darkness threshold (lux)
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 1000
+          unit_of_measurement: lx
+          mode: box
+
+mode: restart
+max_exceeded: silent
+
+triggers:
+  - trigger: state
+    entity_id: !input movimento
+    to: "on"
+
+variables:
+  movimento: !input movimento
+  luci: !input luci
+  sensore_lux: !input sensore_lux
+  soglia_lux: !input soglia_lux
+  minuti_spegnimento: !input minuti_spegnimento
+
+conditions:
+  # if a light is already on and we didn't turn it on, do nothing (manual override)
+  - condition: template
+    value_template: >
+      {{ luci | select('is_state', 'on') | list | count == 0
+         or this.attributes.get('current', 0) | int(0) > 0 }}
+  - condition: template
+    value_template: >
+      {{ sensore_lux == '' or luci | select('is_state', 'on') | list | count > 0
+         or states(sensore_lux) | float(0) < soglia_lux | float(0) }}
+
+actions:
+  - if:
+      - condition: time
+        after: !input inizio_notte
+        before: !input fine_notte
+    then:
+      - action: light.turn_on
+        target:
+          entity_id: "{{ luci }}"
+        data:
+          brightness_pct: !input luminosita_notte
+    else:
+      - action: light.turn_on
+        target:
+          entity_id: "{{ luci }}"
+        data:
+          brightness_pct: !input luminosita_giorno
+  - wait_template: "{{ movimento | select('is_state', 'on') | list | count == 0 }}"
+  - delay:
+      seconds: "{{ (minuti_spegnimento | float(2) * 60) | int }}"
+  - action: light.turn_off
+    target:
+      entity_id: "{{ luci }}"

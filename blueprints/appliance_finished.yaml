@@ -1,0 +1,139 @@
+blueprint:
+  name: Appliance finished (washer, dishwasher, dryer)
+  description: >
+    Notifies you when an appliance has finished its cycle, using a smart plug's power reading.
+    Ignores mid-cycle pauses. With a door sensor, it keeps reminding you until you open the door.
+    — Homelab Italia · https://ko-fi.com/homelabitalia
+  domain: automation
+  author: Homelab Italia
+  input:
+    nome:
+      name: Appliance name
+      description: Used in messages (e.g. "The washing machine").
+      default: The washing machine
+      selector:
+        text:
+    sensore_potenza:
+      name: Power sensor
+      description: Power in W measured by the smart plug.
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: power
+    soglia_avvio:
+      name: Start threshold (W)
+      description: Above this power for 2 minutes, the cycle is considered started.
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 500
+          unit_of_measurement: W
+          mode: box
+    soglia_fine:
+      name: End threshold (W)
+      description: Below this power the cycle is paused or finished.
+      default: 5
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.5
+          unit_of_measurement: W
+          mode: box
+    minuti_fine:
+      name: Minutes below threshold to call it "finished"
+      description: Washers pause during the cycle; 3-5 minutes avoids false alerts.
+      default: 4
+      selector:
+        number:
+          min: 1
+          max: 30
+          unit_of_measurement: min
+    servizio_notifica:
+      name: Notify service
+      description: >
+        E.g. notify.mobile_app_marios_iphone (find it in Developer tools → Actions, search "notify").
+        Also works with notify.telegram or a notify group.
+      default: notify.mobile_app_phone
+      selector:
+        text:
+    sportello:
+      name: Door sensor (optional)
+      description: If set, reminds you to unload until the door is opened.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+    minuti_promemoria:
+      name: Remind every (minutes)
+      default: 30
+      selector:
+        number:
+          min: 5
+          max: 240
+          unit_of_measurement: min
+    max_promemoria:
+      name: Maximum number of reminders
+      default: 3
+      selector:
+        number:
+          min: 0
+          max: 10
+
+mode: single
+max_exceeded: silent
+
+triggers:
+  - trigger: numeric_state
+    entity_id: !input sensore_potenza
+    above: !input soglia_avvio
+    for: "00:02:00"
+
+variables:
+  nome: !input nome
+  servizio_notifica: !input servizio_notifica
+  sportello: !input sportello
+  minuti_promemoria: !input minuti_promemoria
+  max_promemoria: !input max_promemoria
+  inizio: "{{ now().timestamp() - 120 }}"  # the trigger fires after 2 minutes of power draw
+
+actions:
+  - wait_for_trigger:
+      - trigger: numeric_state
+        entity_id: !input sensore_potenza
+        below: !input soglia_fine
+        for:
+          minutes: !input minuti_fine
+    timeout: "06:00:00"
+    continue_on_timeout: false
+  - variables:
+      durata: "{{ ((now().timestamp() - inizio) / 60) | round(0) | int }}"
+  - action: "{{ servizio_notifica }}"
+    data:
+      title: "✅ {{ nome }} is done"
+      message: "Cycle finished after about {{ durata }} minutes."
+  - if:
+      - condition: template
+        value_template: "{{ sportello != '' and max_promemoria | int > 0 }}"
+    then:
+      - repeat:
+          count: "{{ max_promemoria | int }}"
+          sequence:
+            - wait_for_trigger:
+                - trigger: state
+                  entity_id: !input sportello
+                  to: "on"
+              timeout:
+                minutes: "{{ minuti_promemoria | int }}"
+            - if:
+                - condition: template
+                  value_template: "{{ wait.trigger is not none }}"
+              then:
+                - stop: Door opened
+            - action: "{{ servizio_notifica }}"
+              data:
+                title: "🧺 Reminder"
+                message: "{{ nome }} finished a while ago: don't forget to unload it."
