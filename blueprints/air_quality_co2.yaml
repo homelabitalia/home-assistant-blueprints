@@ -1,0 +1,91 @@
+blueprint:
+  name: High CO2 → notify + ventilate (IKEA ALPSTUGA or any CO2 sensor)
+  description: >
+    When the CO2 level stays above a threshold, sends a notification ("open a window")
+    and optionally turns on fans / air purifiers / ventilation switches.
+    When the air is clean again, turns them back off. Works with IKEA ALPSTUGA (Matter)
+    and any sensor reporting CO2 in ppm.
+    — Homelab Italia · https://ko-fi.com/homelabitalia
+  domain: automation
+  author: Homelab Italia
+  input:
+    co2_sensor:
+      name: CO2 sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: carbon_dioxide
+    high:
+      name: Alert above (ppm)
+      description: "1000 ppm is the usual 'time to air the room' level; 1400+ is poor."
+      default: 1000
+      selector:
+        number: {min: 600, max: 3000, step: 50, unit_of_measurement: ppm}
+    clear:
+      name: Back to normal below (ppm)
+      description: Keep it lower than the alert value to avoid on/off flapping.
+      default: 800
+      selector:
+        number: {min: 400, max: 2500, step: 50, unit_of_measurement: ppm}
+    minutes:
+      name: For at least (minutes)
+      default: 5
+      selector:
+        number: {min: 0, max: 60, unit_of_measurement: min}
+    fans:
+      name: Fans / purifiers / switches to turn on (optional)
+      default: []
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: [fan, switch, input_boolean]
+    notify_service:
+      name: Notify service (optional)
+      description: E.g. notify.mobile_app_your_phone. Leave empty for no notifications.
+      default: ""
+      selector:
+        text:
+
+mode: queued
+max_exceeded: silent
+
+triggers:
+  - trigger: numeric_state
+    entity_id: !input co2_sensor
+    above: !input high
+    for: {minutes: !input minutes}
+    id: high
+  - trigger: numeric_state
+    entity_id: !input co2_sensor
+    below: !input clear
+    for: {minutes: !input minutes}
+    id: clear
+
+variables:
+  fans: !input fans
+  notify_service: !input notify_service
+  room: "{{ state_attr(trigger.entity_id, 'friendly_name') }}"
+  ppm: "{{ states(trigger.entity_id) | float(0) | round(0) | int }}"
+
+actions:
+  - choose:
+      - conditions: [{condition: trigger, id: high}]
+        sequence:
+          - if: [{condition: template, value_template: "{{ fans | count > 0 }}"}]
+            then:
+              - action: homeassistant.turn_on
+                target: {entity_id: "{{ fans }}"}
+          - if: [{condition: template, value_template: "{{ notify_service != '' }}"}]
+            then:
+              - action: "{{ notify_service }}"
+                data:
+                  title: Air quality
+                  message: "CO2 is {{ ppm }} ppm ({{ room }}): open a window."
+      - conditions: [{condition: trigger, id: clear}]
+        sequence:
+          - if: [{condition: template, value_template: "{{ fans | count > 0 }}"}]
+            then:
+              - action: homeassistant.turn_off
+                target: {entity_id: "{{ fans }}"}

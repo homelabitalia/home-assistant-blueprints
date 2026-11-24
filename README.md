@@ -32,6 +32,11 @@ Uses a smart plug with power metering (Shelly, Sonoff, Zigbee…):
 | Dishwasher | 10 | 3 | 15 (long drying pauses) |
 | Dryer | 50 | 10 | 3 |
 
+## 🌬️ High CO2 → notify + ventilate (IKEA ALPSTUGA or any CO2 sensor)
+When CO2 stays above a threshold (default 1000 ppm for 5 minutes), sends an "open a window" notification and optionally turns on fans, air purifiers or ventilation switches. When it drops below a lower "back to normal" level (default 800 ppm), turns them off again. Two thresholds = no on/off flapping. Works with IKEA ALPSTUGA (Matter) and any sensor with `device_class: carbon_dioxide`.
+
+[![Open your Home Assistant instance and show the blueprint import dialog.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fhomelabitalia%2Fhome-assistant-blueprints%2Fblob%2Fmain%2Fblueprints%2Fair_quality_co2.yaml)
+
 ## 📱 Home dashboard (no HACS)
 A ready-made, mobile-first dashboard that uses **only built-in cards**, so nothing breaks on the next update:
 - header badges (outside temperature, lights on, open windows/covers, alarm) and a one-line summary;
