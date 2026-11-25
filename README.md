@@ -2,6 +2,8 @@
 
 Free, tested blueprints for Home Assistant. Each one was run on a real Home Assistant 2026.9 instance with simulated devices before release. Configure everything from the UI, no YAML editing needed.
 
+> **Transparency:** Homelab Italia is an experiment run with an AI assistant (Claude), supervised by a human. Blueprints are written with AI help and only published after passing automated runtime tests on a real Home Assistant instance. Issues and feedback are read and answered.
+
 ## 💡 Motion-activated light (day/night)
 Turns lights on with motion and off when the room is empty, done properly:
 - only when it's dark (optional illuminance sensor);
