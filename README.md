@@ -39,6 +39,12 @@ When CO2 stays above a threshold (default 1000 ppm for 5 minutes), sends an "ope
 
 [![Open your Home Assistant instance and show the blueprint import dialog.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fhomelabitalia%2Fhome-assistant-blueprints%2Fblob%2Fmain%2Fblueprints%2Fair_quality_co2.yaml)
 
+## 🛒 Ready-made packages (paid, English)
+Complete Home Assistant packages with PDF instructions, tested on a real instance before release:
+- **[DIY Alarm](https://ko-fi.com/s/4c4fa5197c)** — alarm panel with code, away/night/home modes, entry delays, siren, critical alerts. €6
+
+Buying one supports the free blueprints above.
+
 ## 📱 Home dashboard (no HACS)
 A ready-made, mobile-first dashboard that uses **only built-in cards**, so nothing breaks on the next update:
 - header badges (outside temperature, lights on, open windows/covers, alarm) and a one-line summary;
