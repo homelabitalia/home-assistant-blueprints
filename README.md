@@ -45,6 +45,7 @@ Complete Home Assistant packages with PDF instructions, tested on a real instanc
 - **[Empty House & Vacation](https://ko-fi.com/s/1030435839)** — lights off + summary when everyone leaves, door alerts, vacation thermostat, presence simulation. €5
 - **[Smart Home Maintenance](https://ko-fi.com/s/4947b18a0d)** — low-battery alerts, offline devices, pending updates, Sunday report. €4
 - **[Smart Solar](https://ko-fi.com/s/3f62f96e62)** — surplus alerts, water heater on surplus, daily self consumption % and savings. €6
+- **[All four in one bundle](https://ko-fi.com/s/55f558f97e)**: €14 instead of €21
 
 Buying one supports the free blueprints above.
 
