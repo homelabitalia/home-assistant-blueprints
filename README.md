@@ -47,6 +47,10 @@ Complete Home Assistant packages with PDF instructions, tested on a real instanc
 - **[Smart Solar](https://ko-fi.com/s/3f62f96e62)** — surplus alerts, water heater on surplus, daily self consumption % and savings. €6
 - **[All four in one bundle](https://ko-fi.com/s/55f558f97e)**: €14 instead of €21
 
+More self-hosting kits (Docker Compose + guide, tested before release):
+- **[Homelab Starter Kit](https://ko-fi.com/s/186305061d)**: Vaultwarden, Uptime Kuma, AdGuard Home, Jellyfin + backup script. €5
+- **[Paperless-ngx Kit](https://ko-fi.com/s/43ce79b956)**: searchable home document archive with OCR, ready-made types and tags. €5
+
 Buying one supports the free blueprints above.
 
 ## 📱 Home dashboard (no HACS)
