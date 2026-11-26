@@ -42,6 +42,7 @@ When CO2 stays above a threshold (default 1000 ppm for 5 minutes), sends an "ope
 ## 🛒 Ready-made packages (paid, English)
 Complete Home Assistant packages with PDF instructions, tested on a real instance before release:
 - **[DIY Alarm](https://ko-fi.com/s/4c4fa5197c)** — alarm panel with code, away/night/home modes, entry delays, siren, critical alerts. €6
+- **[Empty House & Vacation](https://ko-fi.com/s/1030435839)** — lights off + summary when everyone leaves, door alerts, vacation thermostat, presence simulation. €5
 
 Buying one supports the free blueprints above.
 
